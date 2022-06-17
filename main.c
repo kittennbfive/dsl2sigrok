@@ -194,7 +194,6 @@ int main(int argc, char **argv)
 			{
 				if(blockdata[blockpos[probe].sample_in_block/8]&(1<<blockpos[probe].sample_in_block%8))
 					chunkdata_arr[chunk-1][unitsize*sample_in_chunk+probe/8]|=1<<(probe%8);
-
 				
 				blockpos[probe].sample_in_block++;
 				
@@ -206,9 +205,7 @@ int main(int argc, char **argv)
 					sprintf(blockname, "L-%u/%lu", probe, blockpos[probe].block);
 					blocksize=get_file_from_zip(input, blockname, &blockdata, false);
 					if(blocksize==0)
-					{
 						break;
-					}
 				}
 			}
 			if(blocksize)
