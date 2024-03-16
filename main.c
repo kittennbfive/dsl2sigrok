@@ -16,7 +16,7 @@ Please read the fine manual.
 
 WARNING: Depending on your input file this tool can eat quite a lot of RAM.
 
-(c) 2022 by kittennbfive
+(c) 2022-2024 by kittennbfive
 
 AGPLv3+ and NO WARRANTY!
 */
