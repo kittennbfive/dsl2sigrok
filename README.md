@@ -1,7 +1,7 @@
 # dsl2sigrok
 
 ## What does this do?
-This is a small tool that converts the native file format of DSView to a file that Sigrok/Pulseview can load. It is written in C, for Linux only and released under AGPLv3+ WITHOUT ANY WARRANTY. Tested on Debian 11.
+This is a small tool that converts the native file format of DSView to a file that Sigrok/Pulseview can load. It is written in C, for Linux only and released under AGPLv3+ WITHOUT ANY WARRANTY. Tested on Debian 11 and 12.
 
 ## DSView?
 Thats a Sigrok/Pulseview-fork made by DreamSourceLab for their Logic Analyzers. It works but i only use it for capturing data (because Pulseview still had some trouble with my LA last time i checked, especially with complex triggers and stuff like this - maybe this has improved?) and then use Pulseview to analyze/process the recorded data.
@@ -10,6 +10,7 @@ Thats a Sigrok/Pulseview-fork made by DreamSourceLab for their Logic Analyzers. 
 DSView has an export-function, but it is really, *really* slow. Saving in the native format (.dsl) only takes seconds, exporting to .sr (or .srzip actually, thats not correct) takes minutes or even hours(!). This is not acceptable for me so i looked at the file format and made this tool.
 
 ## Some numbers
+These where tested on Debian 11.
 ### Demo-device, 16 channels, 5s, 20MHz
 DSView save as .dsl: a few seconds  
 DSView export as .srzip: 16 minutes(!), 2,5MB file size, 12210 small data files inside the .sr (.sr is basically .zip if you didn't know, as is .dsl)  
