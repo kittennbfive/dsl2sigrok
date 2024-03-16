@@ -134,7 +134,7 @@ int main(int argc, char **argv)
 	
 	sprintf(metadata, "[device 1]\ncapturefile=logic-1\ntotal probes=%u\nsamplerate=%s\ntotal analog=0\n", total_probes, samplerate);
 	
-	char channel[10+MAX_LENGTH_PROBE_NAME];
+	char channel[12+MAX_LENGTH_PROBE_NAME];
 	char * channels=malloc(SZ_CHANNELS);
 	memset(channels, '\0', SZ_CHANNELS);
 	
