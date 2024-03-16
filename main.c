@@ -5,6 +5,7 @@
 #include <string.h>
 #include <math.h>
 #include <err.h>
+#include <inttypes.h>
 
 #include "zip_helper.h"
 
@@ -100,9 +101,9 @@ int main(int argc, char **argv)
 		}
 		else if(sscanf(line, "samplerate = %[^NULL]", samplerate)==1)
 			found_entry[ENTRY_SAMPLERATE]=true;
-		else if(sscanf(line, "total samples = %lu", &total_samples)==1)
+		else if(sscanf(line, "total samples = %" SCNu64, &total_samples)==1)
 			found_entry[ENTRY_TOTAL_SAMPLES]=true;
-		else if(sscanf(line, "total blocks = %lu", &total_blocks)==1)
+		else if(sscanf(line, "total blocks = %" SCNu64, &total_blocks)==1)
 			found_entry[ENTRY_TOTAL_BLOCKS]=true;
 		else if(sscanf(line, "probe%hu = %[^NULL]", &probe_number, probe_name)==2)
 			strncpy(probe_names[probe_number], probe_name, MAX_LENGTH_PROBE_NAME);
@@ -122,7 +123,7 @@ int main(int argc, char **argv)
 	sprintf(unitsize_str, "unitsize=%u\n", unitsize);
 	
 	printf("Header of input file successfully parsed.\n");
-	printf("probes: %u\nsamples %lu\nsamplerate %s\n\n", total_probes, total_samples, samplerate);
+	printf("probes: %u\nsamples %" PRIu64 "\nsamplerate %s\n\n", total_probes, total_samples, samplerate);
 	
 	zip_t * output=create_zip_file(argv[2]);
 	
@@ -171,7 +172,7 @@ int main(int argc, char **argv)
 	char blockname[20];
 	uint8_t * blockdata;
 	
-	printf("converting data, %lu samples per chunk, %lu chunks in output...", samples_per_output_chunk, nb_chunks_output); fflush(stdout);
+	printf("converting data, %" PRIu64 " samples per chunk, %" PRIu64 " chunks in output...", samples_per_output_chunk, nb_chunks_output); fflush(stdout);
 
 #if CHUNK_VERBOSE
 	printf("\n");
@@ -187,7 +188,7 @@ int main(int argc, char **argv)
 		
 		for(probe=0; probe<total_probes; probe++)
 		{
-			sprintf(blockname, "L-%u/%lu", probe, blockpos[probe].block);
+			sprintf(blockname, "L-%u/%" PRIu64, probe, blockpos[probe].block);
 			blocksize=get_file_from_zip(input, blockname, &blockdata, false);
 			
 			for(sample_in_chunk=0; sample_in_chunk<samples_per_output_chunk; sample_in_chunk++)
@@ -202,7 +203,7 @@ int main(int argc, char **argv)
 					free(blockdata);
 					blockpos[probe].block++;
 					blockpos[probe].sample_in_block=0;
-					sprintf(blockname, "L-%u/%lu", probe, blockpos[probe].block);
+					sprintf(blockname, "L-%u/%" PRIu64, probe, blockpos[probe].block);
 					blocksize=get_file_from_zip(input, blockname, &blockdata, false);
 					if(blocksize==0)
 						break;
@@ -212,7 +213,7 @@ int main(int argc, char **argv)
 				free(blockdata);
 		}
 		
-		sprintf(chunkname, "logic-1-%lu", chunk);
+		sprintf(chunkname, "logic-1-%" PRIu64, chunk);
 		add_buffer_to_zip_file(output, chunkname, chunkdata_arr[chunk-1], unitsize*sample_in_chunk, compression_ratio);
 	}
 
