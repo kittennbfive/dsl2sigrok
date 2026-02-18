@@ -1,7 +1,7 @@
 # dsl2sigrok
 
 ## What does this do?
-This is a small tool that converts the native file format of DSView to a file that Sigrok/Pulseview can load. It is written in C, for Linux only and released under AGPLv3+ WITHOUT ANY WARRANTY. Tested on Debian 11 and 12.
+This is a small tool that converts the native file format of DSView to a file that Sigrok/Pulseview can load. It is written in C, for Linux only and released under AGPLv3+ WITHOUT ANY WARRANTY. Tested on Debian 11, 12 and 13.
 
 ## DSView?
 Thats a Sigrok/Pulseview-fork made by DreamSourceLab for their Logic Analyzers. It works but i only use it for capturing data (because Pulseview still had some trouble with my LA last time i checked, especially with complex triggers and stuff like this - maybe this has improved?) and then use Pulseview to analyze/process the recorded data.
