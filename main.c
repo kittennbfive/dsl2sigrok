@@ -16,7 +16,7 @@ Please read the fine manual.
 
 WARNING: Depending on your input file this tool can eat quite a lot of RAM.
 
-(c) 2022-2024 by kittennbfive
+Copyright (c) 2022-2026 by kittennbfive
 
 AGPLv3+ and NO WARRANTY!
 */
@@ -29,11 +29,13 @@ AGPLv3+ and NO WARRANTY!
 
 #define MAX_LENGTH_PROBE_NAME 50 //should be enough but you can always increase this...
 
-#define SZ_METADATA 500 //value?
-
-#define SZ_CHANNELS 500 //value?
+#define SZ_HEADER_METADATA 100 //should be enough... 
 
 //-- do not change anything below this line --
+
+#define SZ_CHANNELS (MAX_PROBES*(MAX_LENGTH_PROBE_NAME+12))
+
+#define SZ_METADATA (SZ_HEADER_METADATA+SZ_CHANNELS)
 
 #define ENTRY_TOTAL_PROBES 0
 #define ENTRY_SAMPLERATE 1
@@ -55,7 +57,7 @@ void print_usage(void)
 
 int main(int argc, char **argv)
 {
-	printf("This is dsl2sigrok version 2 (c)2022 by kittennbfive\nThis tool is released under AGPLv3+ and comes WITHOUT ANY WARRANTY!\n\n");
+	printf("This is dsl2sigrok version 2 Copyright (c) 2022-2026 by kittennbfive\nThis tool is released under AGPLv3+ and comes WITHOUT ANY WARRANTY!\n\n");
 	
 	if(argc!=3 && argc!=4)
 	{
@@ -106,7 +108,10 @@ int main(int argc, char **argv)
 		else if(sscanf(line, "total blocks = %" SCNu64, &total_blocks)==1)
 			found_entry[ENTRY_TOTAL_BLOCKS]=true;
 		else if(sscanf(line, "probe%hu = %[^NULL]", &probe_number, probe_name)==2)
+		{
 			strncpy(probe_names[probe_number], probe_name, MAX_LENGTH_PROBE_NAME);
+			probe_names[probe_number][MAX_LENGTH_PROBE_NAME-1]='\0';
+		}
 	} while((line=strtok(NULL, "\n")));
 	
 	if(!found_entry[ENTRY_TOTAL_PROBES])
@@ -120,10 +125,10 @@ int main(int argc, char **argv)
 	
 	uint8_t unitsize=(total_probes+7)/8;
 	char unitsize_str[20];
-	sprintf(unitsize_str, "unitsize=%u\n", unitsize);
+	snprintf(unitsize_str, 20, "unitsize=%u\n", unitsize);
 	
 	printf("Header of input file successfully parsed.\n");
-	printf("probes: %u\nsamples %" PRIu64 "\nsamplerate %s\n\n", total_probes, total_samples, samplerate);
+	printf("probes: %u\nsamples %"PRIu64"\nsamplerate %s\n\n", total_probes, total_samples, samplerate);
 	
 	zip_t * output=create_zip_file(argv[2]);
 	
@@ -132,21 +137,35 @@ int main(int argc, char **argv)
 	
 	char * metadata=malloc(SZ_METADATA);
 	
-	sprintf(metadata, "[device 1]\ncapturefile=logic-1\ntotal probes=%u\nsamplerate=%s\ntotal analog=0\n", total_probes, samplerate);
+	snprintf(metadata, SZ_HEADER_METADATA, "[device 1]\ncapturefile=logic-1\ntotal probes=%u\nsamplerate=%s\ntotal analog=0\n", total_probes, samplerate);
 	
-	char channel[12+MAX_LENGTH_PROBE_NAME];
+	char buf[7];
 	char * channels=malloc(SZ_CHANNELS);
 	memset(channels, '\0', SZ_CHANNELS);
 	
 	uint16_t i;
 	for(i=0; i<total_probes; i++)
 	{
-		sprintf(channel, "probe%u=%s\n", i+1, probe_names[i]);
-		strcat(channels, channel);
+		if(strlen(probe_names[i])>=(MAX_LENGTH_PROBE_NAME-1))
+		{
+			warn("truncated probe name to %u chars", MAX_LENGTH_PROBE_NAME-1);
+			probe_names[i][MAX_LENGTH_PROBE_NAME-1]='\0';
+		}
+		strncat(channels, "probe", SZ_CHANNELS-2);
+		channels[SZ_CHANNELS-1]='\0';
+		snprintf(buf, 7, "%u=", i+1);
+		strncat(channels, buf, SZ_CHANNELS-2);
+		channels[SZ_CHANNELS-1]='\0';
+		strncat(channels, probe_names[i], SZ_CHANNELS-2);
+		channels[SZ_CHANNELS-1]='\0';
+		strncat(channels, "\n", SZ_CHANNELS-2);
+		channels[SZ_CHANNELS-1]='\0';
 	}
 	
-	strcat(metadata, channels);
-	strcat(metadata, unitsize_str);
+	strncat(metadata, channels, SZ_METADATA-2);
+	metadata[SZ_METADATA-1]='\0';
+	strncat(metadata, unitsize_str, SZ_METADATA-2);
+	metadata[SZ_METADATA-1]='\0';
 	
 	add_buffer_to_zip_file(output, "metadata", metadata, strlen(metadata), compression_ratio);
 	
@@ -172,7 +191,7 @@ int main(int argc, char **argv)
 	char blockname[20];
 	uint8_t * blockdata;
 	
-	printf("converting data, %" PRIu64 " samples per chunk, %" PRIu64 " chunks in output...", samples_per_output_chunk, nb_chunks_output); fflush(stdout);
+	printf("converting data, %"PRIu64" samples per chunk, %"PRIu64" chunks in output...", samples_per_output_chunk, nb_chunks_output); fflush(stdout);
 
 #if CHUNK_VERBOSE
 	printf("\n");
@@ -188,7 +207,7 @@ int main(int argc, char **argv)
 		
 		for(probe=0; probe<total_probes; probe++)
 		{
-			sprintf(blockname, "L-%u/%" PRIu64, probe, blockpos[probe].block);
+			snprintf(blockname, 20, "L-%u/%"PRIu64, probe, blockpos[probe].block);
 			blocksize=get_file_from_zip(input, blockname, &blockdata, false);
 			
 			for(sample_in_chunk=0; sample_in_chunk<samples_per_output_chunk; sample_in_chunk++)
@@ -203,7 +222,7 @@ int main(int argc, char **argv)
 					free(blockdata);
 					blockpos[probe].block++;
 					blockpos[probe].sample_in_block=0;
-					sprintf(blockname, "L-%u/%" PRIu64, probe, blockpos[probe].block);
+					snprintf(blockname, 20, "L-%u/%"PRIu64, probe, blockpos[probe].block);
 					blocksize=get_file_from_zip(input, blockname, &blockdata, false);
 					if(blocksize==0)
 						break;
@@ -213,7 +232,7 @@ int main(int argc, char **argv)
 				free(blockdata);
 		}
 		
-		sprintf(chunkname, "logic-1-%" PRIu64, chunk);
+		snprintf(chunkname, 40, "logic-1-%"PRIu64, chunk);
 		add_buffer_to_zip_file(output, chunkname, chunkdata_arr[chunk-1], unitsize*sample_in_chunk, compression_ratio);
 	}
 
